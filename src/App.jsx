@@ -7,12 +7,17 @@ import Vault from './pages/Vault';
 import Remedies from './pages/Remedies';
 import Caretaker from './pages/Caretaker';
 import Login from './pages/Login';
+import Register from './pages/Register'; // 🆕 1. Register Import kiya
 
 function App() {
   const [userRole, setUserRole] = useState(null); 
+  
+  // 🆕 2. State: Decide karega ki Login dikhana hai ya Register
+  const [authView, setAuthView] = useState('login'); 
+  
   const [activePage, setActivePage] = useState('Overview');
 
-  // 💊 1. MASTER DATA: Dawaiyon ki list yahan banayi (Central Store)
+  // 💊 MASTER DATA (Same as before)
   const [medicines, setMedicines] = useState([
     { id: 1, name: "Thyronorm (Thyroid)", time: "07:00 AM", status: "Pending" },
     { id: 2, name: "Amlong (BP)", time: "09:30 AM", status: "Pending" },
@@ -20,7 +25,6 @@ function App() {
     { id: 4, name: "Metformin (Sugar)", time: "08:00 PM", status: "Pending" }
   ]);
 
-  // 🔄 2. ACTION: Dawai lene par status badalne ka function
   const toggleMedicine = (id) => {
     setMedicines(medicines.map(med => 
       med.id === id 
@@ -40,22 +44,15 @@ function App() {
 
   const handleLogout = () => {
     setUserRole(null);
+    setAuthView('login'); // 🆕 Logout karne par wapis Login page par bhejo
     setActivePage('Overview');
   };
 
   const renderPage = () => {
     switch (activePage) {
       case 'Overview': return <Overview />;
-      
-      // 🔗 3. CONNECTION: Data ko pages mein pass kiya (Props)
-      // Elder ke liye: List + Tick karne ki taakat (onToggle)
-      case 'Medications': 
-        return <Medications medicines={medicines} onToggle={toggleMedicine} />;
-        
-      // Caretaker ke liye: Sirf List (Dekhne ke liye)
-      case 'Caretaker': 
-        return <Caretaker medicines={medicines} />;
-        
+      case 'Medications': return <Medications medicines={medicines} onToggle={toggleMedicine} />;
+      case 'Caretaker': return <Caretaker medicines={medicines} />;
       case 'Trends': return <Trends />;
       case 'Vault': return <Vault />;
       case 'Remedies': return <Remedies />;
@@ -63,10 +60,21 @@ function App() {
     }
   };
 
+  // 🚪 3. GATEKEEPER LOGIC UPDATE (Yahan Magic hai)
+  // Agar koi login nahi hai...
   if (!userRole) {
-    return <Login onLogin={handleLogin} />;
+    // ...aur agar wo 'register' karna chahta hai
+    if (authView === 'register') {
+      return <Register onSwitchToLogin={() => setAuthView('login')} />;
+    }
+    // ...warna Login page dikhao
+    return <Login 
+      onLogin={handleLogin} 
+      onSwitchToRegister={() => setAuthView('register')} 
+    />;
   }
 
+  // Agar login hai, toh Main App dikhao
   return (
     <div className="flex min-h-screen bg-[#F8FAFC]">
       <Sidebar 
